@@ -1,5 +1,7 @@
 # Oryze — étude d'interaction
 
+**Live :** https://oryze-interaction-study.vercel.app · **Dépôt :** https://github.com/basgenix4u/oryze-interaction-study (public)
+
 Une seule action produit est étudiée ici : confirmer une relance préparée par Oryze Intelligence. Le maintien rend l'intention visible ; lorsqu'il aboutit, une nouvelle ligne apparaît dans l'historique. Cette page est une démonstration locale : aucun message n'est envoyé.
 
 ## Anneau
