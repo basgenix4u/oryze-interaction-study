@@ -120,7 +120,7 @@ test("le toucher garde son amplitude de 4 px et un pointercancel annule", async 
     viewport: { width: 375, height: 812 },
   });
   const page = await context.newPage();
-  await page.goto("http://127.0.0.1:3000/");
+  await page.goto("/"); // baseURL — runs against dev AND production
   const coarsePointer = await page.evaluate(() => window.matchMedia("(pointer: coarse)").matches);
   expect(coarsePointer).toBe(true);
 
