@@ -2,7 +2,7 @@
 
 **Live :** https://oryze-interaction-study.vercel.app · **Dépôt :** https://github.com/basgenix4u/oryze-interaction-study (public)
 
-Une seule action produit est étudiée ici : confirmer une relance préparée par Oryze Intelligence. Le maintien rend l'intention visible ; lorsqu'il aboutit, une nouvelle ligne apparaît dans l'historique. Cette page est une démonstration locale : aucun message n'est envoyé.
+Cette étude applique un même bouton à six surfaces Oryze et détaille une interaction à conséquence : confirmer une relance préparée par Oryze Intelligence. Le maintien rend l'intention visible ; lorsqu'il aboutit, une nouvelle ligne apparaît dans l'historique. Cette page est une démonstration locale : aucune relance réelle n'est envoyée.
 
 ## Anneau
 
@@ -18,6 +18,8 @@ corepack pnpm dev
 ```
 
 Aucune variable d'environnement n'est nécessaire. L'interaction accepte le pointeur, le toucher et Espace / Entrée. Un mouvement de plus de `10 px`, un relâchement anticipé, une sortie du bouton ou une perte de focus annule le maintien. `prefers-reduced-motion` raccourcit celui-ci à environ `250 ms` et retire les animations décoratives. La ligne haptique de la section 03 décrit l'extension Expo ; la page Web n'émet pas de vibration.
+
+Le modèle visuel compte sept états : les six phases de `ButtonPhase` et le survol, porté séparément par `data-hovering` et les règles CSS. Le type de phase reste inchangé.
 
 ## Vérifications
 

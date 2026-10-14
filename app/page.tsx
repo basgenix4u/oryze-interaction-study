@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { MobileFrame } from "@/components/study/MobileFrame";
+import { ProductApplication } from "@/components/study/ProductApplication";
 import { RelanceCard } from "@/components/study/RelanceCard";
 import { SectionLabel } from "@/components/study/SectionLabel";
 import { OryzeRing } from "@/components/ui/OryzeRing";
@@ -23,7 +24,7 @@ export default function HomePage() {
             <span className="brand-lockup__caption">Étude<br />d'interaction</span>
           </div>
           <p className="header-index mono">
-            <span className="header-index__range">01—04</span>
+            <span className="header-index__range">01—05</span>
             <span aria-hidden="true" className="header-index__divider">/</span>
             <span className="header-index__topic">RELANCE</span>
           </p>
@@ -164,8 +165,19 @@ export default function HomePage() {
           </div>
         </section>
 
+        <section aria-labelledby="product-title" className="study-section study-section--product" id="dans-le-produit">
+          <SectionLabel label="Dans le produit" number="04" />
+          <div className="section-heading product-section-heading">
+            <h2 id="product-title">Le même composant, sur vos vrais écrans.</h2>
+            <p>
+              Un bouton, quatre variantes, sept états — appliqué à vos surfaces réelles, sans déplacer un seul élément de mise en page. Ce n'est pas une refonte. C'est le même produit, avec un bouton qui se comporte enfin de la même façon partout.
+            </p>
+          </div>
+          <ProductApplication />
+        </section>
+
         <section aria-labelledby="system-title" className="study-section study-section--system" id="dans-votre-systeme">
-          <SectionLabel label="Dans votre système" number="04" />
+          <SectionLabel label="Dans votre système" number="05" />
           <div className="section-heading">
             <h2 id="system-title">Une prop. Des états explicites.</h2>
             <p>Le composant s'étend sans changer le comportement des boutons qui n'en ont pas besoin.</p>

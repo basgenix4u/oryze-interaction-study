@@ -1,9 +1,13 @@
 import { expect, test, type Page } from "@playwright/test";
 
+const testBaseURL =
+  process.env.PLAYWRIGHT_BASE_URL ??
+  `http://127.0.0.1:${process.env.PLAYWRIGHT_PORT ?? "3001"}`;
 const mainSendButton = (page: Page) => page.locator("#demo .send-button");
 const tracedEntry = (page: Page) => page.getByText("Relance 2 · tracée", { exact: true });
 
 async function moveToCenter(page: Page, locator: ReturnType<typeof mainSendButton>) {
+  await locator.scrollIntoViewIfNeeded();
   const bounds = await locator.boundingBox();
   if (!bounds) throw new Error("Le bouton de relance n'a pas de boîte visible.");
   await page.mouse.move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
@@ -115,12 +119,13 @@ test("un pointeur tactile dispose du maintien raccourci", async ({ page }) => {
 
 test("le toucher garde son amplitude de 4 px et un pointercancel annule", async ({ browser }) => {
   const context = await browser.newContext({
+    baseURL: testBaseURL,
     hasTouch: true,
     isMobile: true,
     viewport: { width: 375, height: 812 },
   });
   const page = await context.newPage();
-  await page.goto("/"); // baseURL — runs against dev AND production
+  await page.goto("/");
   const coarsePointer = await page.evaluate(() => window.matchMedia("(pointer: coarse)").matches);
   expect(coarsePointer).toBe(true);
 
@@ -164,10 +169,165 @@ test("reduced motion raccourcit le maintien sans retirer le changement d'état",
   await page.mouse.up();
   await expect(tracedEntry(page)).toHaveCount(1, { timeout: 2_500 });
 
+  await page.waitForTimeout(700);
+  const productRow = page.locator("#dans-le-produit .product-row").first();
+  const productButton = productRow.locator(".product-row__send");
+  await moveToCenter(page, productButton);
+  await page.mouse.down();
+  await expect(productRow.locator(".product-row__confirmation")).toContainText(
+    "Relance 2 · tracée · démonstration locale",
+    { timeout: 1_200 },
+  );
+  await page.mouse.up();
+
   const motionDurations = await page.locator(".trace-log__row--new").evaluate((element) =>
     window.getComputedStyle(element).animationDuration,
   );
   expect(motionDurations).toBe("1e-05s");
+});
+
+test("la cinquième section reprend les deux lignes et les six surfaces sans dérive", async ({ page }) => {
+  await page.goto("/");
+
+  await expect(page.locator("main > section")).toHaveCount(5);
+  await expect(page.locator("main section")).toHaveCount(5);
+  await expect(page.locator(".header-index__range")).toHaveText("01—05");
+  await expect(page.locator("main > section .section-label__text")).toHaveText([
+    "La démonstration",
+    "L'idée",
+    "Au doigt",
+    "Dans le produit",
+    "Dans votre système",
+  ]);
+  await expect(page.getByRole("heading", { name: "Le même composant, sur vos vrais écrans." })).toBeVisible();
+  await expect(page.locator("#dans-le-produit .product-section-heading > p")).toHaveText(
+    "Un bouton, quatre variantes, sept états — appliqué à vos surfaces réelles, sans déplacer un seul élément de mise en page. Ce n'est pas une refonte. C'est le même produit, avec un bouton qui se comporte enfin de la même façon partout.",
+  );
+
+  const rows = page.locator("#dans-le-produit .product-row");
+  await expect(rows).toHaveCount(2);
+  await expect(rows.nth(0)).toContainText("Studio Nord");
+  await expect(rows.nth(0)).toContainText("FAC-2026-0038");
+  await expect(rows.nth(0)).toContainText("échue 02/08");
+  await expect(rows.nth(0)).toContainText("860,00 €");
+  await expect(rows.nth(0)).toContainText("Relance 1 · tracée le 12/08");
+  await expect(rows.nth(0)).toContainText("Relance 2 · préparée · à envoyer");
+  await expect(rows.nth(1)).toContainText("Menuiserie Roux");
+  await expect(rows.nth(1)).toContainText("FAC-2026-0031");
+  await expect(rows.nth(1)).toContainText("échue 26/07");
+  await expect(rows.nth(1)).toContainText("2 340,00 €");
+  await expect(rows.nth(1)).toContainText("Relance 1 · tracée le 05/08");
+  await expect(rows.nth(1)).toContainText("Promesse de règlement · 25/08");
+  await expect(page.locator("#dans-le-produit .product-context")).toHaveCount(6);
+  await expect(page.locator("#dans-le-produit .product-context__caption")).toHaveText([
+    "Factures",
+    "Dépenses",
+    "TVA",
+    "Documents",
+    "Relances",
+    "Comptes",
+  ]);
+  await expect(page.locator("#dans-le-produit .product-context__button")).toHaveText([
+    "Encaisser",
+    "Importer un justificatif",
+    "Préparer la déclaration",
+    "Exporter le FEC",
+    "Envoyer la relance",
+    "Nouveau virement",
+  ]);
+  const contextButtons = page.locator("#dans-le-produit .product-context__button");
+  const contextButtonClasses = await contextButtons.evaluateAll((elements) =>
+    elements.map((element) => element.className),
+  );
+  expect(contextButtonClasses).toHaveLength(6);
+  expect(contextButtonClasses.every((className) =>
+    className.includes("oryze-button--primary") && className.includes("oryze-button--md"),
+  )).toBe(true);
+  await contextButtons.first().hover();
+  await expect(contextButtons.first()).toHaveAttribute("data-hovering", "true");
+  await expect(contextButtons.first()).toHaveAttribute("data-phase", "idle");
+  await expect(page.locator("#dans-le-produit .product-context-line")).toHaveText(
+    "Un seul composant. Six surfaces réelles. Aucune dérive.",
+  );
+});
+
+test("une relance du produit garde le maintien, le logo-anneau et écrit sa trace", async ({ page }) => {
+  await page.goto("/");
+  const row = page.locator("#dans-le-produit .product-row").first();
+  const button = row.locator(".product-row__send");
+  await expect(button.locator(".oryze-ring")).toBeVisible();
+  await moveToCenter(page, button);
+  await page.mouse.down();
+  await expect(button).toHaveAttribute("data-phase", "hold");
+  await expect(button).toHaveAttribute("data-phase", "working", { timeout: 1_600 });
+  await expect(button).toHaveAttribute("aria-busy", "true");
+  await page.mouse.up();
+  await expect(row.locator(".product-row__confirmation")).toContainText(
+    "Relance 2 · tracée · démonstration locale",
+    { timeout: 2_500 },
+  );
+  await expect(row.locator(".product-row__history")).toContainText("Relance 2 · tracée le");
+  await expect(button).toBeDisabled();
+});
+
+test("le bouton produit accepte le maintien au clavier", async ({ page }) => {
+  await page.goto("/");
+  const row = page.locator("#dans-le-produit .product-row").nth(1);
+  const button = row.locator(".product-row__send");
+  await button.scrollIntoViewIfNeeded();
+  await button.focus();
+  await page.keyboard.down("Enter");
+  await expect(button).toHaveAttribute("data-phase", "hold");
+  await expect(button).toHaveAttribute("data-phase", "working", { timeout: 1_600 });
+  await page.keyboard.up("Enter");
+  await expect(row.locator(".product-row__confirmation")).toContainText(
+    "Relance 2 · tracée · démonstration locale",
+    { timeout: 2_500 },
+  );
+});
+
+test("le bouton produit reste lisible et confirme une pression tactile", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto("/");
+
+  await page.evaluate(() => {
+    const button = document.querySelector<HTMLButtonElement>("#dans-le-produit .product-row button");
+    if (!button) throw new Error("Bouton produit introuvable.");
+    const bounds = button.getBoundingClientRect();
+    const pointerInit: PointerEventInit = {
+      bubbles: true,
+      cancelable: true,
+      button: 0,
+      pointerId: 52,
+      pointerType: "touch",
+      isPrimary: true,
+      clientX: bounds.left + bounds.width / 2,
+      clientY: bounds.top + bounds.height / 2,
+    };
+    button.dispatchEvent(new PointerEvent("pointerdown", pointerInit));
+    window.setTimeout(() => button.dispatchEvent(new PointerEvent("pointerup", pointerInit)), 950);
+  });
+
+  const button = page.locator("#dans-le-produit .product-row").first().getByRole("button");
+  await expect(button).toHaveAttribute("data-phase", "working", { timeout: 1_400 });
+  await expect(page.locator("#dans-le-produit .product-row").first().locator(".product-row__confirmation")).toContainText(
+    "Relance 2 · tracée · démonstration locale",
+    { timeout: 2_500 },
+  );
+});
+
+test("le rendu initial ne produit aucun avertissement console", async ({ page }) => {
+  const consoleIssues: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "warning" || message.type() === "error") {
+      consoleIssues.push(`${message.type()}: ${message.text()}`);
+    }
+  });
+  page.on("pageerror", (error) => consoleIssues.push(error.message));
+
+  await page.goto("/");
+  await expect(page.locator("#dans-le-produit .product-row")).toHaveCount(2);
+  expect(consoleIssues).toEqual([]);
 });
 
 test("le contenu reste lisible lorsque JavaScript est désactivé", async ({ browser }) => {
@@ -175,7 +335,7 @@ test("le contenu reste lisible lorsque JavaScript est désactivé", async ({ bro
   const page = await context.newPage();
   await page.goto("/");
 
-  await expect(page.locator("main > section")).toHaveCount(4);
+  await expect(page.locator("main > section")).toHaveCount(5);
   await expect(page.getByRole("heading", { name: "Le geste complète votre marque." })).toBeVisible();
   await expect(page.locator("#demo .send-button")).toBeVisible();
   await expect(page.locator("#demo .relance-card")).toContainText("Studio Nord");
@@ -200,13 +360,29 @@ test("375, 768 et 1440 px n'introduisent pas de débordement horizontal", async 
   for (const width of [375, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/");
-    const measurements = await page.evaluate(() => ({
-      viewport: window.innerWidth,
-      document: document.documentElement.scrollWidth,
-      phone: document.querySelector(".phone-frame")?.getBoundingClientRect().width ?? 0,
-    }));
+    const measurements = await page.evaluate(() => {
+      const product = document.querySelector<HTMLElement>(".product-application");
+      return {
+        viewport: window.innerWidth,
+        document: document.documentElement.scrollWidth,
+        phone: document.querySelector(".phone-frame")?.getBoundingClientRect().width ?? 0,
+        productClient: product?.clientWidth ?? 0,
+        productScroll: product?.scrollWidth ?? 0,
+        sectionHeights: [...document.querySelectorAll("main > section")].map(
+          (section) => section.getBoundingClientRect().height,
+        ),
+      };
+    });
 
     expect(measurements.document, `débordement à ${width}px`).toBeLessThanOrEqual(width);
     expect(measurements.phone, `cadre téléphone trop large à ${width}px`).toBeLessThanOrEqual(width);
+    expect(measurements.productScroll, `vue produit trop large à ${width}px`).toBeLessThanOrEqual(
+      measurements.productClient + 1,
+    );
+    const firstThreeSections = measurements.sectionHeights.slice(0, 3).reduce((sum, height) => sum + height, 0);
+    expect(
+      measurements.sectionHeights[3],
+      `section 04 plus longue que 01–03 réunies à ${width}px`,
+    ).toBeLessThanOrEqual(firstThreeSections);
   }
 });
