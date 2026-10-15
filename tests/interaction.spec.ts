@@ -386,3 +386,36 @@ test("375, 768 et 1440 px n'introduisent pas de débordement horizontal", async 
     ).toBeLessThanOrEqual(firstThreeSections);
   }
 });
+
+test("le défilement annule le maintien, comme l'annonce la section 03", async ({ page }) => {
+  await page.goto("/");
+  const button = mainSendButton(page);
+  await moveToCenter(page, button);
+
+  await page.mouse.down();
+  await expect(button).toHaveAttribute("data-phase", "hold");
+  await page.waitForTimeout(140);
+
+  await page.mouse.wheel(0, 260);
+  await expect(button).toHaveAttribute("data-phase", "cancelled");
+  await expect(tracedEntry(page)).toHaveCount(0);
+  await page.mouse.up();
+});
+
+test("le badge de retard des deux lignes dérive de la même source que les sections 01 et 03", async ({ page }) => {
+  await page.goto("/");
+
+  const rows = page.locator("#dans-le-produit .product-row");
+  await expect(rows.nth(0).locator(".product-row__overdue")).toHaveText("Retard12j");
+  await expect(rows.nth(1).locator(".product-row__overdue")).toHaveText("Retard19j");
+
+  /* la section 03 annonce la même valeur pour la même facture */
+  await expect(page.locator(".phone-invoice__top .status-badge")).toHaveText("Retard 12 jours");
+  await expect(page.locator("#demo .relance-card__header .status-badge")).toHaveText("Retard 12 jours");
+});
+
+test("le pied de page signe l'étude", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator(".site-footer__name")).toHaveText("Abdulbasit Abdulalim");
+  await expect(page.locator(".site-footer__topic")).toHaveText("Étude d'interaction");
+});

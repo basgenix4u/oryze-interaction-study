@@ -129,8 +129,8 @@ export default function HomePage() {
                   <tr>
                     <th scope="row">Déclencheur</th>
                     <td>
-                      Sur Expo, <code>onPressIn</code> ; sur le web, <code>pointerdown</code>. Jamais
-                      <code> onMouseDown</code>, qui arrive après le doigt.
+                      Sur Expo, <code>onPressIn</code> ; sur le web, <code>pointerdown</code>. Jamais{" "}
+                      <code>onMouseDown</code>, qui arrive après le doigt.
                     </td>
                   </tr>
                   <tr>
@@ -148,8 +148,8 @@ export default function HomePage() {
                   <tr>
                     <th scope="row">Haptique</th>
                     <td>
-                      <code>impactAsync(Light)</code> au contact · <code>notificationAsync(Success)</code> à la fin ·
-                      <code> Warning</code> à l'annulation.
+                      <code>impactAsync(Light)</code> au contact · <code>notificationAsync(Success)</code> à la fin ·{" "}
+                      <code>Warning</code> à l'annulation.
                     </td>
                   </tr>
                   <tr>
@@ -222,6 +222,17 @@ export default function HomePage() {
           </aside>
         </section>
       </main>
+
+      <footer className="site-footer">
+        <div className="site-footer__inner">
+          <p className="site-footer__byline">
+            <span className="site-footer__name">Abdulbasit Abdulalim</span>
+            <span aria-hidden="true" className="site-footer__divider" />
+            <span className="site-footer__topic">Étude d'interaction</span>
+          </p>
+          <p className="site-footer__stamp mono">Octobre 2026</p>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -2413,3 +2413,61 @@ code {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* — Pied de page : signature de l'étude — */
+
+.site-footer {
+  border-top: var(--border-hair) solid var(--line-hairline);
+}
+
+.site-footer__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding: 20px 32px 28px;
+}
+
+.site-footer__byline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  min-width: 0;
+  font-size: var(--fs-sm);
+}
+
+.site-footer__name {
+  font-weight: 600;
+  letter-spacing: var(--ls-tight);
+  color: var(--text-strong);
+}
+
+.site-footer__divider {
+  width: 14px;
+  height: 1px;
+  flex: none;
+  background: var(--oryze-ink-40);
+}
+
+.site-footer__topic,
+.site-footer__stamp {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.site-footer__stamp {
+  font-size: var(--fs-xs);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .site-footer__inner {
+    padding: 18px 18px 24px;
+  }
+}

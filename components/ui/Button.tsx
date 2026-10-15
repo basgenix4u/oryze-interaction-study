@@ -118,6 +118,7 @@ export function Button({
   const [isHovering, setIsHovering] = useState(false);
   const [isPressing, setIsPressing] = useState(false);
   const activeGestureRef = useRef<ActiveGesture | null>(null);
+  const wheelWatcherRef = useRef<(() => void) | null>(null);
   const progressRef = useRef(0);
   const animationFrameRef = useRef<number | null>(null);
   const drainFrameRef = useRef<number | null>(null);
@@ -162,6 +163,10 @@ export function Button({
       if (resetTimerRef.current !== null) {
         window.clearTimeout(resetTimerRef.current);
       }
+      if (wheelWatcherRef.current !== null) {
+        window.removeEventListener("wheel", wheelWatcherRef.current, true);
+        wheelWatcherRef.current = null;
+      }
     };
   }, []);
 
@@ -171,6 +176,13 @@ export function Button({
   const isBusy = loading || visiblePhase === "working";
   const isNativeDisabled = isUnavailable;
   const ringProgress = visiblePhase === "working" || visiblePhase === "done" ? 1 : holdProgress;
+
+  const stopWheelWatcher = useCallback(() => {
+    if (wheelWatcherRef.current !== null) {
+      window.removeEventListener("wheel", wheelWatcherRef.current, true);
+      wheelWatcherRef.current = null;
+    }
+  }, []);
 
   const triggerCompletedAction = useCallback(() => {
     const callbacks = callbackRef.current;
@@ -195,6 +207,7 @@ export function Button({
     if (activeGestureRef.current === null) return;
 
     activeGestureRef.current = null;
+    stopWheelWatcher();
     if (animationFrameRef.current !== null) {
       window.cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
@@ -213,7 +226,7 @@ export function Button({
     setIsPressing(false);
     setLocalPhase(phasePropRef.current === undefined ? "done" : "working");
     triggerCompletedAction();
-  }, [triggerCompletedAction]);
+  }, [stopWheelWatcher, triggerCompletedAction]);
 
   const cancelGesture = useCallback(() => {
     const activeGesture = activeGestureRef.current;
@@ -223,6 +236,7 @@ export function Button({
     }
 
     activeGestureRef.current = null;
+    stopWheelWatcher();
     if (animationFrameRef.current !== null) {
       window.cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
@@ -239,7 +253,6 @@ export function Button({
     setIsPressing(false);
     setLocalPhase("cancelled");
     callbackRef.current.onHoldCancel?.();
-
     const startingProgress = progressRef.current;
     const drainDuration = reducedMotionRef.current ? 0 : 180;
     if (startingProgress <= 0.001 || drainDuration === 0) {
@@ -271,7 +284,7 @@ export function Button({
       },
       reducedMotionRef.current ? 250 : 620,
     );
-  }, []);
+  }, [stopWheelWatcher]);
 
   const startGesture = useCallback(
     (input: GestureInput) => {
@@ -304,6 +317,23 @@ export function Button({
       setLocalPhase("hold");
       setIsPressing(true);
 
+      // Le défilement annule le maintien : un geste qui fait défiler la page n'est pas
+      // un geste qui confirme.
+      //
+      // On écoute `wheel` et non `scroll`. Un `scroll` se déclenche aussi sans intention
+      // de l'utilisateur — un `focus()` ou un `scrollIntoView()` font défiler le document
+      // et annuleraient un maintien au clavier qui vient de commencer. `wheel` n'est émis
+      // que par une molette ou un trackpad, donc par une intention réelle. La phase de
+      // capture permet d'attraper le geste même si un conteneur interne absorbe
+      // l'événement, comme le cadre téléphone de la section 03.
+      stopWheelWatcher();
+      const cancelOnWheel = () => {
+        if (activeGestureRef.current === null) return;
+        cancelGesture();
+      };
+      wheelWatcherRef.current = cancelOnWheel;
+      window.addEventListener("wheel", cancelOnWheel, { capture: true, passive: true });
+
       const tick = (now: number) => {
         const current = activeGestureRef.current;
         if (current === null) return;
@@ -321,7 +351,7 @@ export function Button({
 
       animationFrameRef.current = window.requestAnimationFrame(tick);
     },
-    [finishGesture, holdToConfirm, isUnavailable],
+    [cancelGesture, finishGesture, holdToConfirm, isUnavailable, stopWheelWatcher],
   );
 
   const handlePointerDown = (event: PointerEvent<HTMLButtonElement>) => {

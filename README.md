@@ -17,7 +17,7 @@ corepack pnpm install
 corepack pnpm dev
 ```
 
-Aucune variable d'environnement n'est nécessaire. L'interaction accepte le pointeur, le toucher et Espace / Entrée. Un mouvement de plus de `10 px`, un relâchement anticipé, une sortie du bouton ou une perte de focus annule le maintien. `prefers-reduced-motion` raccourcit celui-ci à environ `250 ms` et retire les animations décoratives. La ligne haptique de la section 03 décrit l'extension Expo ; la page Web n'émet pas de vibration.
+Aucune variable d'environnement n'est nécessaire. L'interaction accepte le pointeur, le toucher et Espace / Entrée. Un mouvement de plus de `10 px`, un relâchement anticipé, un défilement à la molette, une sortie du bouton ou une perte de focus annule le maintien. Le défilement est écouté sur `wheel` et non sur `scroll` : `scroll` se déclenche aussi sur un `focus()` ou un `scrollIntoView()` sans intention de l'utilisateur, ce qui annulerait un maintien au clavier à peine commencé. `prefers-reduced-motion` raccourcit celui-ci à environ `250 ms` et retire les animations décoratives. La ligne haptique de la section 03 décrit l'extension Expo ; la page Web n'émet pas de vibration.
 
 Le modèle visuel compte sept états : les six phases de `ButtonPhase` et le survol, porté séparément par `data-hovering` et les règles CSS. Le type de phase reste inchangé.
 

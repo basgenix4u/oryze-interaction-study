@@ -26,11 +26,28 @@ type ProductRelance = {
   reference: string;
   dueDate: string;
   amount: string;
-  overdueDays: number;
   nextRelance: number;
   history: readonly ProductHistoryEntry[];
   replaceHistoryIndex?: number;
 };
+
+/**
+ * Date de référence unique de l'étude — la seule source du retard affiché.
+ *
+ * Elle est calée sur ce que la page dit déjà ailleurs de la facture FAC-2026-0038 :
+ * §01 et §03 affichent « Retard 12 jours » pour une échéance au 02/08, et le produit
+ * Oryze affiche la même valeur sur cette facture. Le badge n'est donc plus une chaîne
+ * écrite à la main : il se calcule à partir de l'échéance de chaque facture, et les
+ * deux lignes ne peuvent plus diverger.
+ */
+const REFERENCE_DATE_UTC = Date.UTC(2026, 7, 14); // 14/08/2026
+const MS_PER_DAY = 86_400_000;
+
+function overdueDays(dueDate: string): number {
+  const [day, month] = dueDate.split("/").map(Number);
+  const due = Date.UTC(2026, month - 1, day);
+  return Math.max(0, Math.round((REFERENCE_DATE_UTC - due) / MS_PER_DAY));
+}
 
 const productRelances = [
   {
@@ -40,7 +57,6 @@ const productRelances = [
     reference: "FAC-2026-0038",
     dueDate: "02/08",
     amount: "860,00\u202f€",
-    overdueDays: 10,
     nextRelance: 2,
     replaceHistoryIndex: 1,
     history: [
@@ -64,7 +80,6 @@ const productRelances = [
     reference: "FAC-2026-0031",
     dueDate: "26/07",
     amount: "2\u202f340,00\u202f€",
-    overdueDays: 10,
     nextRelance: 2,
     history: [
       {
@@ -236,7 +251,7 @@ function ProductRelanceRow({ data }: { data: ProductRelance }) {
 
       <StatusBadge className="product-row__overdue" variant="butter">
         <span>Retard</span>
-        <span className="mono">{data.overdueDays}</span>
+        <span className="mono">{overdueDays(data.dueDate)}</span>
         <span>j</span>
       </StatusBadge>
 
